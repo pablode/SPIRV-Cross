@@ -101,7 +101,7 @@ struct MSLShaderInterfaceVariable
 // and (for iOS only) the resource is not a storage image (sampled != 2), the binding reference we
 // remap to will become an [[id(N)]] attribute within the "descriptor set" argument buffer structure.
 // For resources which are bound in the "classic" MSL 1.0 way or discrete descriptors, the remap will
-// become a [[buffer(N)]], [[texture(N)]] or [[sampler(N)]] depending on the resource types used.
+// become a [[buffer(N)]], [[texture(N)]] etc. depending on the resource types used.
 struct MSLResourceBinding
 {
 	spv::ExecutionModel stage = spv::ExecutionModelMax;
@@ -112,6 +112,7 @@ struct MSLResourceBinding
 	uint32_t msl_buffer = 0;
 	uint32_t msl_texture = 0;
 	uint32_t msl_sampler = 0;
+	uint32_t msl_acceleration_structure = 0;
 };
 
 enum MSLSamplerCoord
@@ -655,8 +656,8 @@ public:
 	// calling ::compile() if the location were used by the MSL code.
 	void add_msl_shader_output(const MSLShaderInterfaceVariable &output);
 
-	// resource is a resource binding to indicate the MSL buffer,
-	// texture or sampler index to use for a particular SPIR-V description set
+	// resource is a resource binding to indicate the MSL buffer, texture, sampler, acceleration
+	// structure or ray query index to use for a particular SPIR-V description set
 	// and binding. If resource bindings are provided,
 	// is_msl_resource_binding_used() will return true after calling ::compile() if
 	// the set/binding combination was used by the MSL code.
@@ -714,7 +715,7 @@ public:
 	// This must only be called after a successful call to CompilerMSL::compile().
 	// For a variable resource ID obtained through reflection API, report the automatically assigned resource index.
 	// If the descriptor set was part of an argument buffer, report the [[id(N)]],
-	// or [[buffer/texture/sampler]] binding for other resources.
+	// or [[buffer/texture/sampler/acceleration structure]] binding for other resources.
 	// If the resource was a combined image sampler, report the image binding here,
 	// use the _secondary version of this call to query the sampler half of the resource.
 	// If no binding exists, uint32_t(-1) is returned.
@@ -1112,6 +1113,7 @@ protected:
 	uint32_t argument_buffer_padding_buffer_type_id = 0;
 	uint32_t argument_buffer_padding_image_type_id = 0;
 	uint32_t argument_buffer_padding_sampler_type_id = 0;
+	uint32_t argument_buffer_padding_acceleration_structure_type_id = 0;
 
 	bool does_shader_write_sample_mask = false;
 	bool frag_shader_needs_discard_checks = false;
@@ -1162,6 +1164,7 @@ protected:
 	uint32_t next_metal_resource_index_buffer = 0;
 	uint32_t next_metal_resource_index_texture = 0;
 	uint32_t next_metal_resource_index_sampler = 0;
+	uint32_t next_metal_resource_index_acceleration_structure = 0;
 	// Intentionally uninitialized, works around MSVC 2013 bug.
 	uint32_t next_metal_resource_ids[kMaxArgumentBuffers];
 
@@ -1253,6 +1256,7 @@ protected:
 	void add_argument_buffer_padding_buffer_type(SPIRType &struct_type, uint32_t &mbr_idx, uint32_t &arg_buff_index, MSLResourceBinding &rez_bind);
 	void add_argument_buffer_padding_image_type(SPIRType &struct_type, uint32_t &mbr_idx, uint32_t &arg_buff_index, MSLResourceBinding &rez_bind);
 	void add_argument_buffer_padding_sampler_type(SPIRType &struct_type, uint32_t &mbr_idx, uint32_t &arg_buff_index, MSLResourceBinding &rez_bind);
+	void add_argument_buffer_padding_acceleration_structure_type(SPIRType &struct_type, uint32_t &mbr_idx, uint32_t &arg_buff_index, MSLResourceBinding &rez_bind);
 	void add_argument_buffer_padding_type(uint32_t mbr_type_id, SPIRType &struct_type, uint32_t &mbr_idx, uint32_t &arg_buff_index, uint32_t count);
 
 	uint32_t get_target_components_for_fragment_location(uint32_t location) const;

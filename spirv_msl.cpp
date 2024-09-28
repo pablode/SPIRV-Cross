@@ -113,6 +113,9 @@ void CompilerMSL::add_msl_resource_binding(const MSLResourceBinding &binding)
 			ADD_ARG_IDX_TO_BINDING_NUM_LOOKUP(texture);
 			ADD_ARG_IDX_TO_BINDING_NUM_LOOKUP(sampler);
 			break;
+		case SPIRType::AccelerationStructure:
+			ADD_ARG_IDX_TO_BINDING_NUM_LOOKUP(acceleration_structure);
+			break;
 		default:
 			SPIRV_CROSS_THROW("Unexpected argument buffer resource base type. When padding argument buffer elements, "
 			                  "all descriptor set resources must be supplied with a base type by the app.");
@@ -18489,6 +18492,9 @@ void CompilerMSL::analyze_argument_buffers()
 						else
 							add_argument_buffer_padding_image_type(buffer_type, member_index, next_arg_buff_index, rez_bind);
 						break;
+					case SPIRType::AccelerationStructure:
+						add_argument_buffer_padding_acceleration_structure_type(buffer_type, member_index, next_arg_buff_index, rez_bind);
+						break;
 					default:
 						break;
 					}
@@ -18732,6 +18738,23 @@ void CompilerMSL::add_argument_buffer_padding_sampler_type(SPIRType &struct_type
 	}
 
 	add_argument_buffer_padding_type(argument_buffer_padding_sampler_type_id, struct_type, mbr_idx, arg_buff_index, rez_bind.count);
+}
+
+// Adds an argument buffer padding argument acceleration structure type as a member of the struct type at the member index.
+void CompilerMSL::add_argument_buffer_padding_acceleration_structure_type(SPIRType &struct_type, uint32_t &mbr_idx,
+                                                                          uint32_t &arg_buff_index, MSLResourceBinding &rez_bind)
+{
+	if (!argument_buffer_padding_acceleration_structure_type_id)
+	{
+		uint32_t as_type_id = ir.increase_bound_by(1);
+		auto &as_type = set<SPIRType>(as_type_id, OpTypeAccelerationStructureKHR);
+		as_type.basetype = SPIRType::AccelerationStructure;
+		as_type.storage = StorageClassUniformConstant;
+
+		argument_buffer_padding_acceleration_structure_type_id = as_type_id;
+	}
+
+	add_argument_buffer_padding_type(argument_buffer_padding_acceleration_structure_type_id, struct_type, mbr_idx, arg_buff_index, rez_bind.count);
 }
 
 // Adds the argument buffer padding argument type as a member of the struct type at the member index.
